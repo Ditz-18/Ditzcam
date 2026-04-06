@@ -1,0 +1,538 @@
+<!DOCTYPE html>
+<html lang="id" data-theme="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="theme-color" content="#0a0c10" />
+  <title>DITZ CAM</title>
+  <link rel="manifest" href="manifest.json" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
+  <link rel="stylesheet" href="css/main.css" />
+  <link rel="stylesheet" href="css/camera.css" />
+  <link rel="stylesheet" href="css/gallery.css" />
+  <link rel="stylesheet" href="css/settings.css" />
+</head>
+<body>
+
+<div id="app">
+
+  <!-- Install Banner -->
+  <div id="install-banner">
+    <i class="fas fa-mobile-alt"></i>
+    <span>Install DITZ CAM ke homescreen untuk pengalaman terbaik</span>
+    <span class="spacer"></span>
+    <button id="install-btn" class="install-btn-primary">Install</button>
+    <button id="install-dismiss" class="install-btn-dismiss"><i class="fas fa-times"></i></button>
+  </div>
+
+  <!-- Top Bar -->
+  <header id="topbar">
+    <div class="topbar-brand">
+      <div>
+        <div class="topbar-logo">DITZ CAM</div>
+        <div class="topbar-sub">DITZNET TECHNOLOGY</div>
+      </div>
+    </div>
+    <div class="topbar-actions">
+      <button id="theme-toggle-btn" class="icon-btn" onclick="SettingsManager.toggleTheme()" title="Ganti tema">
+        <i class="fas fa-moon"></i>
+      </button>
+    </div>
+  </header>
+
+  <!-- Pages Container -->
+  <div class="pages-container">
+
+    <!-- ======== CAMERA PAGE ======== -->
+    <div id="page-camera" class="page">
+
+      <div id="camera-viewfinder">
+        <video id="camera-video" autoplay playsinline muted></video>
+        <canvas id="camera-overlay"></canvas>
+        <div id="camera-touch-zone"></div>
+
+        <!-- Corner brackets -->
+        <div class="viewfinder-corners">
+          <div class="corner corner-tl"></div>
+          <div class="corner corner-tr"></div>
+          <div class="corner corner-bl"></div>
+          <div class="corner corner-br"></div>
+        </div>
+
+        <!-- GPS badge -->
+        <div id="gps-badge">
+          <i class="fas fa-location-dot"></i>
+          <span id="gps-status-text">Mencari GPS...</span>
+        </div>
+
+        <!-- Timer countdown overlay -->
+        <div id="timer-countdown"></div>
+
+        <!-- Timestamp Position Panel -->
+        <div id="ts-position-panel">
+          <div class="ts-position-title">Posisi Timestamp</div>
+          <div class="ts-grid">
+            <button class="ts-pos-btn" data-pos="top-left" title="Atas Kiri"><i class="fas fa-arrow-up-left"></i></button>
+            <button class="ts-pos-btn" data-pos="top-center" title="Atas Tengah"><i class="fas fa-arrow-up"></i></button>
+            <button class="ts-pos-btn" data-pos="top-right" title="Atas Kanan"><i class="fas fa-arrow-up-right"></i></button>
+            <button class="ts-pos-btn" data-pos="middle-left" title="Tengah Kiri"><i class="fas fa-arrow-left"></i></button>
+            <button class="ts-pos-btn" data-pos="middle-center" title="Tengah"><i class="fas fa-circle-dot"></i></button>
+            <button class="ts-pos-btn" data-pos="middle-right" title="Tengah Kanan"><i class="fas fa-arrow-right"></i></button>
+            <button class="ts-pos-btn" data-pos="bottom-left" title="Bawah Kiri"><i class="fas fa-arrow-down-left"></i></button>
+            <button class="ts-pos-btn" data-pos="bottom-center" title="Bawah Tengah"><i class="fas fa-arrow-down"></i></button>
+            <button class="ts-pos-btn active" data-pos="bottom-right" title="Bawah Kanan"><i class="fas fa-arrow-down-right"></i></button>
+          </div>
+        </div>
+
+        <!-- No camera access -->
+        <div id="camera-no-access">
+          <i class="fas fa-camera-slash"></i>
+          <h3>Kamera Tidak Tersedia</h3>
+          <p>Izinkan akses kamera di browser kamu, lalu muat ulang halaman ini.</p>
+        </div>
+      </div>
+
+      <!-- Camera Controls -->
+      <div id="camera-controls">
+        <div class="controls-top">
+          <div class="timer-group">
+            <button class="timer-btn active" data-timer="0">OFF</button>
+            <button class="timer-btn" data-timer="3">3s</button>
+            <button class="timer-btn" data-timer="5">5s</button>
+            <button class="timer-btn" data-timer="10">10s</button>
+          </div>
+          <div class="controls-right-tools">
+            <button id="btn-ts-position" class="icon-btn" title="Posisi timestamp">
+              <i class="fas fa-crosshairs"></i>
+            </button>
+            <button id="btn-grid" class="icon-btn" title="Grid overlay">
+              <i class="fas fa-border-all"></i>
+            </button>
+            <button id="btn-torch" class="icon-btn" title="Flash/Torch">
+              <i class="fas fa-bolt-slash"></i>
+            </button>
+          </div>
+        </div>
+
+        <div class="controls-main">
+          <div class="zoom-area">
+            <span id="zoom-label">1.0x</span>
+            <input id="zoom-slider" type="range" min="1" max="5" step="0.1" value="1" />
+          </div>
+          <button id="btn-shutter" aria-label="Ambil foto"></button>
+          <button id="btn-switch" class="icon-btn" title="Ganti kamera">
+            <i class="fas fa-camera-rotate"></i>
+          </button>
+        </div>
+      </div>
+
+    </div><!-- /page-camera -->
+
+
+    <!-- ======== GALLERY PAGE ======== -->
+    <div id="page-gallery" class="page">
+
+      <div class="gallery-toolbar">
+        <div class="filter-group">
+          <button class="filter-btn active" data-filter="all">Semua</button>
+          <button class="filter-btn" data-filter="today">Hari ini</button>
+          <button class="filter-btn" data-filter="week">Minggu ini</button>
+          <button class="filter-btn" data-filter="month">Bulan ini</button>
+        </div>
+        <span class="toolbar-spacer"></span>
+        <select id="gallery-sort">
+          <option value="newest">Terbaru</option>
+          <option value="oldest">Terlama</option>
+        </select>
+        <button id="btn-select-all" class="icon-btn" title="Pilih semua">
+          <i class="fas fa-check-double"></i>
+        </button>
+      </div>
+
+      <div class="storage-meter">
+        <div class="storage-bar"><div id="storage-bar-fill" style="width:0%"></div></div>
+        <span id="storage-label">Memuat...</span>
+      </div>
+
+      <div class="gallery-scroll">
+        <div id="gallery-grid"></div>
+        <div id="gallery-empty">
+          <i class="fas fa-images"></i>
+          <h3>Belum ada foto</h3>
+          <p>Foto yang kamu ambil akan muncul di sini</p>
+        </div>
+      </div>
+
+      <!-- Selection Bar -->
+      <div id="selection-bar">
+        <span id="selection-count">0 dipilih</span>
+        <button id="btn-clear-sel" class="sel-action-btn">
+          <i class="fas fa-xmark"></i> Batal
+        </button>
+        <button id="btn-download-sel" class="sel-action-btn">
+          <i class="fas fa-download"></i> Unduh
+        </button>
+        <button id="btn-delete-sel" class="sel-action-btn danger">
+          <i class="fas fa-trash"></i> Hapus
+        </button>
+      </div>
+
+    </div><!-- /page-gallery -->
+
+
+    <!-- ======== SETTINGS PAGE ======== -->
+    <div id="page-settings" class="page">
+      <div class="settings-scroll">
+
+        <!-- Timestamp -->
+        <div class="settings-section">
+          <div class="settings-section-title">
+            <i class="fas fa-clock"></i> Timestamp
+          </div>
+
+          <!-- Timestamp Position inline picker -->
+          <div class="ts-position-picker-inline">
+            <span class="setting-label">Posisi Default Timestamp</span>
+            <span class="setting-desc">Posisi teks timestamp di foto</span>
+            <div class="ts-grid-settings" id="ts-grid-settings"></div>
+          </div>
+
+          <div class="setting-row">
+            <div class="setting-icon"><i class="fas fa-calendar"></i></div>
+            <div class="setting-info">
+              <span class="setting-label">Format Tanggal</span>
+              <span class="setting-desc">Urutan penulisan tanggal</span>
+            </div>
+            <select id="setting-dateformat" class="setting-select">
+              <option value="DD/MM/YYYY">DD/MM/YYYY</option>
+              <option value="MM/DD/YYYY">MM/DD/YYYY</option>
+              <option value="YYYY-MM-DD">YYYY-MM-DD</option>
+            </select>
+          </div>
+          <div class="setting-row">
+            <div class="setting-icon"><i class="fas fa-clock"></i></div>
+            <div class="setting-info">
+              <span class="setting-label">Format Waktu</span>
+              <span class="setting-desc">12 jam atau 24 jam</span>
+            </div>
+            <select id="setting-timeformat" class="setting-select">
+              <option value="24h">24 Jam</option>
+              <option value="12h">12 Jam (AM/PM)</option>
+            </select>
+          </div>
+          <div class="setting-row">
+            <div class="setting-icon"><i class="fas fa-text-height"></i></div>
+            <div class="setting-info">
+              <span class="setting-label">Ukuran Font Timestamp</span>
+              <span class="setting-desc">Ukuran teks di foto</span>
+            </div>
+            <select id="setting-fontsize" class="setting-select">
+              <option value="small">Kecil</option>
+              <option value="medium">Sedang</option>
+              <option value="large">Besar</option>
+            </select>
+          </div>
+          <div class="setting-row">
+            <div class="setting-icon"><i class="fas fa-palette"></i></div>
+            <div class="setting-info">
+              <span class="setting-label">Warna Teks Timestamp</span>
+              <span class="setting-desc">Warna teks overlay di foto</span>
+            </div>
+            <select id="setting-tscolor" class="setting-select">
+              <option value="#ffffff">Putih</option>
+              <option value="#ffff00">Kuning</option>
+              <option value="#00e5ff">Cyan</option>
+              <option value="#ff3b5c">Merah</option>
+              <option value="#00e676">Hijau</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- Kamera -->
+        <div class="settings-section">
+          <div class="settings-section-title">
+            <i class="fas fa-camera"></i> Kamera
+          </div>
+          <div class="setting-row">
+            <div class="setting-icon"><i class="fas fa-border-all"></i></div>
+            <div class="setting-info">
+              <span class="setting-label">Grid Overlay</span>
+              <span class="setting-desc">Tampilkan panduan rule of thirds</span>
+            </div>
+            <div class="toggle-wrap">
+              <label class="toggle">
+                <input type="checkbox" id="setting-grid" />
+                <span class="toggle-slider"></span>
+              </label>
+            </div>
+          </div>
+          <div class="setting-row">
+            <div class="setting-icon"><i class="fas fa-volume-high"></i></div>
+            <div class="setting-info">
+              <span class="setting-label">Suara Shutter</span>
+              <span class="setting-desc">Efek suara saat foto diambil</span>
+            </div>
+            <div class="toggle-wrap">
+              <label class="toggle">
+                <input type="checkbox" id="setting-sound" />
+                <span class="toggle-slider"></span>
+              </label>
+            </div>
+          </div>
+          <div class="setting-row">
+            <div class="setting-icon"><i class="fas fa-display"></i></div>
+            <div class="setting-info">
+              <span class="setting-label">Cegah Layar Tidur</span>
+              <span class="setting-desc">Layar tidak mati saat kamera aktif</span>
+            </div>
+            <div class="toggle-wrap">
+              <label class="toggle">
+                <input type="checkbox" id="setting-sleep" />
+                <span class="toggle-slider"></span>
+              </label>
+            </div>
+          </div>
+          <div class="setting-row">
+            <div class="setting-icon"><i class="fas fa-file-image"></i></div>
+            <div class="setting-info">
+              <span class="setting-label">Kualitas Export</span>
+              <span class="setting-desc">Kualitas JPEG saat menyimpan foto</span>
+            </div>
+            <select id="setting-quality" class="setting-select">
+              <option value="high">Tinggi</option>
+              <option value="medium">Sedang</option>
+              <option value="low">Rendah</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- Lokasi -->
+        <div class="settings-section">
+          <div class="settings-section-title">
+            <i class="fas fa-location-dot"></i> Lokasi & GPS
+          </div>
+          <div class="setting-row">
+            <div class="setting-icon"><i class="fas fa-map-pin"></i></div>
+            <div class="setting-info">
+              <span class="setting-label">Auto-Request GPS</span>
+              <span class="setting-desc">Minta izin lokasi otomatis saat buka kamera</span>
+            </div>
+            <div class="toggle-wrap">
+              <label class="toggle">
+                <input type="checkbox" id="setting-gps" />
+                <span class="toggle-slider"></span>
+              </label>
+            </div>
+          </div>
+        </div>
+
+        <!-- Tampilan -->
+        <div class="settings-section">
+          <div class="settings-section-title">
+            <i class="fas fa-swatchbook"></i> Tampilan
+          </div>
+          <div class="setting-row">
+            <div class="setting-icon"><i class="fas fa-moon"></i></div>
+            <div class="setting-info">
+              <span class="setting-label">Dark Mode</span>
+              <span class="setting-desc">Tema gelap atau terang</span>
+            </div>
+            <div class="toggle-wrap">
+              <label class="toggle">
+                <input type="checkbox" id="setting-theme" />
+                <span class="toggle-slider"></span>
+              </label>
+            </div>
+          </div>
+          <div class="setting-row">
+            <div class="setting-icon"><i class="fas fa-language"></i></div>
+            <div class="setting-info">
+              <span class="setting-label">Bahasa</span>
+              <span class="setting-desc">Bahasa antarmuka aplikasi</span>
+            </div>
+            <select id="setting-language" class="setting-select">
+              <option value="id">Indonesia</option>
+              <option value="en">English</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- Reset -->
+        <div class="settings-section">
+          <div class="settings-section-title">
+            <i class="fas fa-triangle-exclamation"></i> Lainnya
+          </div>
+          <div class="setting-row">
+            <button id="setting-reset">
+              <i class="fas fa-rotate-left"></i> Reset Semua Pengaturan
+            </button>
+          </div>
+        </div>
+
+        <!-- About -->
+        <div class="settings-about">
+          <div class="about-logo">DITZ CAM</div>
+          <div class="about-version font-mono">v1.0.0</div>
+          <div class="about-divider"></div>
+          <div class="about-copy">Copyright &copy; 2025 DITZNET TECHNOLOGY</div>
+          <div class="about-copy text-muted">Semua hak dilindungi undang-undang</div>
+        </div>
+
+      </div>
+    </div><!-- /page-settings -->
+
+  </div><!-- /pages-container -->
+
+  <!-- Bottom Navigation -->
+  <nav id="bottom-nav">
+    <button class="nav-btn active" data-nav="camera">
+      <i class="fas fa-camera"></i>
+      <span>Kamera</span>
+    </button>
+    <button class="nav-btn" data-nav="gallery">
+      <i class="fas fa-images"></i>
+      <span>Galeri</span>
+    </button>
+    <button class="nav-btn" data-nav="settings">
+      <i class="fas fa-sliders"></i>
+      <span>Pengaturan</span>
+    </button>
+  </nav>
+
+</div><!-- /app -->
+
+<!-- Lightbox -->
+<div id="lightbox">
+  <div class="lightbox-inner">
+    <div class="lightbox-header">
+      <h3><i class="fas fa-image"></i> &nbsp;Detail Foto</h3>
+      <button id="lightbox-close" class="icon-btn"><i class="fas fa-xmark"></i></button>
+    </div>
+    <img id="lightbox-img" src="" alt="Preview foto" />
+    <div class="lightbox-meta">
+      <div class="meta-row">
+        <i class="fas fa-calendar-days"></i>
+        <span class="meta-key">Tanggal</span>
+        <span class="meta-val" id="lightbox-date">-</span>
+      </div>
+      <div class="meta-row">
+        <i class="fas fa-location-crosshairs"></i>
+        <span class="meta-key">Koordinat</span>
+        <span class="meta-val" id="lightbox-gps">-</span>
+      </div>
+      <div class="meta-row">
+        <i class="fas fa-map-location-dot"></i>
+        <span class="meta-key">Alamat</span>
+        <span class="meta-val" id="lightbox-addr">-</span>
+      </div>
+      <div class="meta-row">
+        <i class="fas fa-weight-hanging"></i>
+        <span class="meta-key">Ukuran</span>
+        <span class="meta-val" id="lightbox-size">-</span>
+      </div>
+    </div>
+    <div class="lightbox-actions">
+      <button id="lightbox-download" class="lb-action-btn primary">
+        <i class="fas fa-download"></i> Unduh
+      </button>
+      <button id="lightbox-delete" class="lb-action-btn danger">
+        <i class="fas fa-trash"></i> Hapus
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- Shutter Flash -->
+<div id="shutter-flash"></div>
+
+<!-- Toast Container -->
+<div id="toast-container"></div>
+
+<!-- Scripts -->
+<script src="js/storage.js"></script>
+<script src="js/timestamp.js"></script>
+<script src="js/capture.js"></script>
+<script src="js/camera.js"></script>
+<script src="js/download.js"></script>
+<script src="js/gallery.js"></script>
+<script src="js/settings.js"></script>
+<script src="js/app.js"></script>
+
+<script>
+// Timestamp position panel toggle
+document.getElementById('btn-ts-position').addEventListener('click', function() {
+  const panel = document.getElementById('ts-position-panel');
+  panel.classList.toggle('visible');
+});
+document.querySelectorAll('.ts-pos-btn[data-pos]').forEach(btn => {
+  btn.addEventListener('click', function() {
+    const pos = this.dataset.pos;
+    Storage.saveSetting('timestampPosition', pos);
+    document.querySelectorAll('.ts-pos-btn').forEach(b => b.classList.remove('active'));
+    document.querySelectorAll(`[data-pos="${pos}"]`).forEach(b => b.classList.add('active'));
+    document.getElementById('ts-position-panel').classList.remove('visible');
+    App.showToast('Posisi timestamp diubah', 'success');
+  });
+});
+document.getElementById('camera-touch-zone').addEventListener('click', function(e) {
+  const panel = document.getElementById('ts-position-panel');
+  if (panel.classList.contains('visible')) panel.classList.remove('visible');
+});
+
+// Settings position grid
+(function buildSettingsPosGrid() {
+  const positions = [
+    { key: 'top-left', label: 'Atas Kiri' },
+    { key: 'top-center', label: 'Atas Tengah' },
+    { key: 'top-right', label: 'Atas Kanan' },
+    { key: 'middle-left', label: 'Kiri' },
+    { key: 'middle-center', label: 'Tengah' },
+    { key: 'middle-right', label: 'Kanan' },
+    { key: 'bottom-left', label: 'Bawah Kiri' },
+    { key: 'bottom-center', label: 'Bawah Tengah' },
+    { key: 'bottom-right', label: 'Bawah Kanan' },
+  ];
+  const grid = document.getElementById('ts-grid-settings');
+  const current = Storage.getSettings().timestampPosition;
+  positions.forEach(p => {
+    const btn = document.createElement('button');
+    btn.className = 'ts-pos-btn-settings' + (p.key === current ? ' active' : '');
+    btn.textContent = p.label;
+    btn.addEventListener('click', function() {
+      Storage.saveSetting('timestampPosition', p.key);
+      document.querySelectorAll('.ts-pos-btn-settings').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      // Sync camera panel
+      document.querySelectorAll(`[data-pos]`).forEach(b => b.classList.remove('active'));
+      document.querySelectorAll(`[data-pos="${p.key}"]`).forEach(b => b.classList.add('active'));
+      App.showToast('Posisi timestamp diubah', 'success');
+    });
+    grid.appendChild(btn);
+  });
+})();
+
+// Update GPS badge
+TimestampEngine.startGPS = (function(orig) {
+  return function(onUpdate, onError) {
+    const badge = document.getElementById('gps-badge');
+    const badgeText = document.getElementById('gps-status-text');
+    return orig.call(TimestampEngine,
+      function(gps) {
+        if (badge) badge.className = 'gps-active';
+        if (badgeText) badgeText.textContent = `${gps.lat.toFixed(4)}, ${gps.lng.toFixed(4)}`;
+        if (onUpdate) onUpdate(gps);
+      },
+      function(err) {
+        if (badge) badge.className = 'gps-error';
+        if (badgeText) badgeText.textContent = 'GPS tidak tersedia';
+        if (onError) onError(err);
+      }
+    );
+  };
+})(TimestampEngine.startGPS);
+</script>
+
+</body>
+</html>

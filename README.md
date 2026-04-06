@@ -1,0 +1,2 @@
+# Ditzcam
+Ditz Cam - Timestamp 

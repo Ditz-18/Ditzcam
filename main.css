@@ -1,0 +1,283 @@
+/* main.css — global styles, CSS variables, dark/light theme */
+
+@import url('https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;500;600;700&family=Share+Tech+Mono&family=Exo+2:wght@300;400;500;600&display=swap');
+
+/* ---- Variables ---- */
+:root {
+  --font-display: 'Rajdhani', sans-serif;
+  --font-mono: 'Share Tech Mono', monospace;
+  --font-body: 'Exo 2', sans-serif;
+
+  --accent: #00e5ff;
+  --accent-dim: rgba(0, 229, 255, 0.15);
+  --accent-glow: 0 0 12px rgba(0, 229, 255, 0.5);
+  --danger: #ff3b5c;
+  --success: #00e676;
+  --warning: #ffab00;
+
+  --nav-h: 58px;
+  --topbar-h: 48px;
+  --radius: 10px;
+  --radius-sm: 6px;
+  --transition: 0.2s ease;
+}
+
+[data-theme="dark"] {
+  --bg: #0a0c10;
+  --bg2: #111318;
+  --bg3: #1a1d24;
+  --bg4: #22262f;
+  --border: rgba(255,255,255,0.07);
+  --text: #e8eaf0;
+  --text-dim: #7a7f8f;
+  --text-muted: #4a4f60;
+  --glass: rgba(17, 19, 24, 0.85);
+  --glass-border: rgba(255,255,255,0.08);
+}
+
+[data-theme="light"] {
+  --bg: #f0f2f7;
+  --bg2: #ffffff;
+  --bg3: #e8eaf0;
+  --bg4: #dde1eb;
+  --border: rgba(0,0,0,0.08);
+  --text: #1a1d24;
+  --text-dim: #5a5f70;
+  --text-muted: #9aa0b0;
+  --glass: rgba(255, 255, 255, 0.88);
+  --glass-border: rgba(0,0,0,0.08);
+}
+
+/* ---- Reset ---- */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html { height: 100%; -webkit-tap-highlight-color: transparent; }
+body {
+  height: 100%;
+  font-family: var(--font-body);
+  background: var(--bg);
+  color: var(--text);
+  overflow: hidden;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+a { color: inherit; text-decoration: none; }
+button { cursor: pointer; border: none; background: none; font-family: inherit; color: inherit; }
+input, select, textarea { font-family: inherit; }
+
+/* ---- App Shell ---- */
+#app {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  height: 100dvh;
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  overflow: hidden;
+}
+
+/* ---- Top Bar ---- */
+#topbar {
+  height: var(--topbar-h);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 16px;
+  background: var(--bg2);
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+  position: relative;
+  z-index: 100;
+}
+
+.topbar-brand {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.topbar-logo {
+  font-family: var(--font-display);
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--accent);
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  line-height: 1;
+  text-shadow: var(--accent-glow);
+}
+.topbar-sub {
+  font-family: var(--font-mono);
+  font-size: 9px;
+  color: var(--text-muted);
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  line-height: 1;
+  margin-top: 2px;
+}
+.topbar-actions { display: flex; gap: 8px; align-items: center; }
+
+/* ---- Bottom Navigation ---- */
+#bottom-nav {
+  height: var(--nav-h);
+  display: flex;
+  align-items: center;
+  justify-content: space-around;
+  background: var(--bg2);
+  border-top: 1px solid var(--border);
+  flex-shrink: 0;
+  position: relative;
+  z-index: 100;
+}
+.nav-btn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 8px 20px;
+  border-radius: var(--radius);
+  color: var(--text-muted);
+  transition: color var(--transition), background var(--transition);
+  font-family: var(--font-body);
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.5px;
+}
+.nav-btn i { font-size: 20px; transition: transform var(--transition); }
+.nav-btn.active {
+  color: var(--accent);
+}
+.nav-btn.active i { transform: scale(1.1); }
+
+/* ---- Pages ---- */
+.pages-container {
+  flex: 1;
+  min-height: 0;        /* critical: allows flex child to shrink below content size */
+  overflow: hidden;
+  position: relative;
+  isolation: isolate;
+}
+.page {
+  position: absolute;
+  top: 0; left: 0; right: 0; bottom: 0;
+  display: none;
+  overflow: hidden;
+  visibility: hidden;   /* double-lock: hidden even if display glitches */
+}
+.page.active {
+  display: flex;
+  flex-direction: column;
+  visibility: visible;
+}
+
+/* ---- Icon Buttons ---- */
+.icon-btn {
+  width: 38px; height: 38px;
+  border-radius: var(--radius-sm);
+  display: flex; align-items: center; justify-content: center;
+  background: var(--bg3);
+  color: var(--text-dim);
+  transition: background var(--transition), color var(--transition);
+  font-size: 15px;
+}
+.icon-btn:hover, .icon-btn.active {
+  background: var(--accent-dim);
+  color: var(--accent);
+}
+.icon-btn.danger:hover { background: rgba(255,59,92,0.15); color: var(--danger); }
+
+/* ---- Scrollbar ---- */
+::-webkit-scrollbar { width: 4px; height: 4px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--bg4); border-radius: 4px; }
+
+/* ---- Toast ---- */
+#toast-container {
+  position: fixed;
+  bottom: calc(var(--nav-h) + 16px);
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 9999;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  align-items: center;
+  pointer-events: none;
+}
+.toast {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 16px;
+  background: var(--bg3);
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  font-size: 13px;
+  font-family: var(--font-body);
+  color: var(--text);
+  box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+  opacity: 0;
+  transform: translateY(10px);
+  transition: opacity 0.25s, transform 0.25s;
+  white-space: nowrap;
+}
+.toast.show { opacity: 1; transform: translateY(0); }
+.toast-success i { color: var(--success); }
+.toast-error i { color: var(--danger); }
+.toast-info i { color: var(--accent); }
+
+/* ---- Install Banner ---- */
+#install-banner {
+  display: none;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 16px;
+  background: var(--accent-dim);
+  border-bottom: 1px solid rgba(0,229,255,0.2);
+  font-size: 12px;
+  font-family: var(--font-body);
+  color: var(--text);
+  flex-shrink: 0;
+  min-height: 0;
+}
+#install-banner i { color: var(--accent); }
+#install-banner .spacer { flex: 1; }
+.install-btn-primary {
+  padding: 5px 14px;
+  background: var(--accent);
+  color: #0a0c10;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 700;
+  font-family: var(--font-display);
+  letter-spacing: 0.5px;
+}
+.install-btn-dismiss {
+  width: 28px; height: 28px;
+  display: flex; align-items: center; justify-content: center;
+  border-radius: 50%;
+  color: var(--text-muted);
+  font-size: 13px;
+}
+
+/* ---- Shutter Flash ---- */
+#shutter-flash {
+  position: fixed;
+  inset: 0;
+  background: white;
+  opacity: 0;
+  pointer-events: none;
+  z-index: 9998;
+  transition: opacity 0.12s;
+}
+
+/* ---- Utility ---- */
+.sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0,0,0,0); }
+.flex { display: flex; }
+.flex-center { display: flex; align-items: center; justify-content: center; }
+.gap-8 { gap: 8px; }
+.text-accent { color: var(--accent); }
+.text-dim { color: var(--text-dim); }
+.text-muted { color: var(--text-muted); }
+.text-danger { color: var(--danger); }
+.font-mono { font-family: var(--font-mono); }
+.font-display { font-family: var(--font-display); }

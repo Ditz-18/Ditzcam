@@ -70,7 +70,18 @@
         <!-- Timer countdown overlay -->
         <div id="timer-countdown"></div>
 
-        <!-- Timestamp Position Panel -->
+        <!-- No camera access -->
+        <div id="camera-no-access">
+          <i class="fas fa-camera-slash"></i>
+          <h3>Kamera Tidak Tersedia</h3>
+          <p>Izinkan akses kamera di browser kamu, lalu muat ulang halaman ini.</p>
+        </div>
+      </div>
+
+      <!-- Camera Controls -->
+      <div id="camera-controls" style="position:relative;">
+
+        <!-- Timestamp Position Panel (anchor to controls) -->
         <div id="ts-position-panel">
           <div class="ts-position-title">Posisi Timestamp</div>
           <div class="ts-grid">
@@ -85,17 +96,6 @@
             <button class="ts-pos-btn active" data-pos="bottom-right" title="Bawah Kanan"><i class="fas fa-arrow-down-right"></i></button>
           </div>
         </div>
-
-        <!-- No camera access -->
-        <div id="camera-no-access">
-          <i class="fas fa-camera-slash"></i>
-          <h3>Kamera Tidak Tersedia</h3>
-          <p>Izinkan akses kamera di browser kamu, lalu muat ulang halaman ini.</p>
-        </div>
-      </div>
-
-      <!-- Camera Controls -->
-      <div id="camera-controls">
         <div class="controls-top">
           <div class="timer-group">
             <button class="timer-btn active" data-timer="0">OFF</button>

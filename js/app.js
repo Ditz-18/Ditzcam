@@ -2,7 +2,8 @@
 
 const App = (() => {
   let deferredInstallPrompt = null;
-  let currentPage = 'camera';
+  let currentPage = '';
+  let isNavigating = false; // guard against hashchange loop
 
   function init() {
     SettingsManager.init();
@@ -13,7 +14,7 @@ const App = (() => {
   }
 
   function _getInitialPage() {
-    const hash = location.hash.replace('#', '') || 'camera';
+    const hash = location.hash.replace('#', '');
     return ['camera', 'gallery', 'settings'].includes(hash) ? hash : 'camera';
   }
 
@@ -21,24 +22,38 @@ const App = (() => {
     document.querySelectorAll('[data-nav]').forEach(btn => {
       btn.addEventListener('click', () => _navigateTo(btn.dataset.nav));
     });
-    window.addEventListener('hashchange', () => _navigateTo(_getInitialPage()));
+    // Only respond to hashchange when not triggered by us
+    window.addEventListener('hashchange', () => {
+      if (!isNavigating) _navigateTo(_getInitialPage());
+    });
   }
 
   function _navigateTo(page) {
+    if (currentPage === page) return;
     currentPage = page;
-    location.hash = page;
 
+    // Set hash without triggering hashchange listener
+    isNavigating = true;
+    location.hash = page;
+    setTimeout(() => { isNavigating = false; }, 0);
+
+    // Deactivate all pages
     document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
     document.querySelectorAll('[data-nav]').forEach(b => b.classList.remove('active'));
 
+    // Activate target page
     const pageEl = document.getElementById(`page-${page}`);
     if (pageEl) pageEl.classList.add('active');
 
     const navBtn = document.querySelector(`[data-nav="${page}"]`);
     if (navBtn) navBtn.classList.add('active');
 
-    if (page === 'camera') CameraPage.activate();
-    else { CameraPage.deactivate(); }
+    // Page lifecycle
+    if (page === 'camera') {
+      CameraPage.activate();
+    } else {
+      CameraPage.deactivate();
+    }
 
     if (page === 'gallery') GalleryPage.activate();
     if (page === 'settings') SettingsManager.renderSettingsPage();
@@ -52,13 +67,11 @@ const App = (() => {
       const banner = document.getElementById('install-banner');
       if (banner) banner.style.display = 'flex';
     });
-
     window.addEventListener('appinstalled', () => {
       deferredInstallPrompt = null;
       const banner = document.getElementById('install-banner');
       if (banner) banner.style.display = 'none';
     });
-
     if ('serviceWorker' in navigator) {
       navigator.serviceWorker.register('./sw.js').catch(() => {});
     }
@@ -71,7 +84,7 @@ const App = (() => {
       installBtn.addEventListener('click', async () => {
         if (!deferredInstallPrompt) return;
         deferredInstallPrompt.prompt();
-        const { outcome } = await deferredInstallPrompt.userChoice;
+        await deferredInstallPrompt.userChoice;
         deferredInstallPrompt = null;
         const banner = document.getElementById('install-banner');
         if (banner) banner.style.display = 'none';
@@ -91,7 +104,7 @@ const App = (() => {
     const toast = document.createElement('div');
     toast.className = `toast toast-${type}`;
     const icon = type === 'success' ? 'fa-check-circle'
-               : type === 'error' ? 'fa-exclamation-circle'
+               : type === 'error'   ? 'fa-exclamation-circle'
                : 'fa-info-circle';
     toast.innerHTML = `<i class="fas ${icon}"></i><span>${msg}</span>`;
     container.appendChild(toast);
@@ -107,33 +120,34 @@ const App = (() => {
 
 // ---- Camera Page Controller ----
 const CameraPage = (() => {
-  let active = false;
+  let cameraActive = false;
+  let controlsReady = false;
   let timerValue = 0;
-  let videoEl, overlayEl;
 
   function activate() {
-    if (active) return;
-    active = true;
-    videoEl = document.getElementById('camera-video');
-    overlayEl = document.getElementById('camera-overlay');
+    if (cameraActive) return;
+    cameraActive = true;
 
+    if (!controlsReady) { _setupControls(); controlsReady = true; }
+
+    const videoEl = document.getElementById('camera-video');
+    const overlayEl = document.getElementById('camera-overlay');
     const s = Storage.getSettings();
-    Camera.start(videoEl, overlayEl, s).then(() => {
-      if (s.autoRequestGPS) {
-        TimestampEngine.startGPS(
-          () => {},
-          () => App.showToast('GPS tidak tersedia', 'error')
-        );
-      }
-      _setupControls();
-    }).catch(err => {
-      App.showToast('Kamera tidak dapat diakses: ' + err.message, 'error');
-    });
+
+    Camera.start(videoEl, overlayEl, s)
+      .then(() => {
+        TimestampEngine.startGPS(() => {}, () => {});
+      })
+      .catch(() => {
+        const noAccess = document.getElementById('camera-no-access');
+        if (noAccess) noAccess.classList.add('visible');
+        App.showToast('Izinkan akses kamera untuk melanjutkan', 'error');
+      });
   }
 
   function deactivate() {
-    if (!active) return;
-    active = false;
+    if (!cameraActive) return;
+    cameraActive = false;
     Camera.stop();
     TimestampEngine.stopGPS();
   }
@@ -143,19 +157,16 @@ const CameraPage = (() => {
     const shutterBtn = document.getElementById('btn-shutter');
     if (shutterBtn) {
       shutterBtn.addEventListener('click', () => {
+        if (!Camera.hasStream()) { App.showToast('Kamera belum siap', 'error'); return; }
         shutterBtn.disabled = true;
         Camera.takePhotoWithTimer(timerValue,
-          (count) => { _updateTimerDisplay(count); },
+          (count) => _updateTimerDisplay(count),
           (photo, result) => {
             shutterBtn.disabled = false;
             _updateTimerDisplay(0);
-            if (result === 'quota') {
-              App.showToast('Storage penuh! Hapus beberapa foto.', 'error');
-            } else if (result) {
-              App.showToast('Foto tersimpan', 'success');
-            } else {
-              App.showToast('Gagal menyimpan foto', 'error');
-            }
+            if (result === 'quota') App.showToast('Storage penuh! Hapus beberapa foto.', 'error');
+            else if (result)        App.showToast('Foto tersimpan', 'success');
+            else                    App.showToast('Gagal menyimpan foto', 'error');
           }
         );
       });
@@ -165,8 +176,8 @@ const CameraPage = (() => {
     const switchBtn = document.getElementById('btn-switch');
     if (switchBtn) {
       switchBtn.addEventListener('click', async () => {
-        await Camera.switchCamera();
-        App.showToast('Kamera diganti', 'info');
+        try { await Camera.switchCamera(); App.showToast('Kamera diganti', 'info'); }
+        catch { App.showToast('Gagal ganti kamera', 'error'); }
       });
     }
 
@@ -175,13 +186,14 @@ const CameraPage = (() => {
     if (torchBtn) {
       torchBtn.addEventListener('click', async () => {
         const on = await Camera.toggleTorch();
+        if (on === false) { App.showToast('Flash tidak didukung', 'info'); return; }
         torchBtn.classList.toggle('active', on);
         torchBtn.querySelector('i').className = on ? 'fas fa-bolt' : 'fas fa-bolt-slash';
         App.showToast(on ? 'Flash aktif' : 'Flash mati', 'info');
       });
     }
 
-    // Timer select
+    // Timer
     document.querySelectorAll('[data-timer]').forEach(btn => {
       btn.addEventListener('click', () => {
         timerValue = parseInt(btn.dataset.timer) || 0;
@@ -190,11 +202,10 @@ const CameraPage = (() => {
       });
     });
 
-    // Grid toggle
+    // Grid
     const gridBtn = document.getElementById('btn-grid');
     if (gridBtn) {
-      const s = Storage.getSettings();
-      gridBtn.classList.toggle('active', s.gridOverlay);
+      gridBtn.classList.toggle('active', Storage.getSettings().gridOverlay);
       gridBtn.addEventListener('click', () => {
         const cur = Storage.getSettings().gridOverlay;
         Storage.saveSetting('gridOverlay', !cur);
@@ -204,7 +215,7 @@ const CameraPage = (() => {
 
     // Zoom slider
     const zoomSlider = document.getElementById('zoom-slider');
-    const zoomLabel = document.getElementById('zoom-label');
+    const zoomLabel  = document.getElementById('zoom-label');
     if (zoomSlider) {
       zoomSlider.addEventListener('input', () => {
         const v = parseFloat(zoomSlider.value);
@@ -217,12 +228,8 @@ const CameraPage = (() => {
   function _updateTimerDisplay(count) {
     const el = document.getElementById('timer-countdown');
     if (!el) return;
-    if (count > 0) {
-      el.textContent = count;
-      el.style.display = 'flex';
-    } else {
-      el.style.display = 'none';
-    }
+    if (count > 0) { el.textContent = count; el.style.display = 'flex'; }
+    else { el.style.display = 'none'; }
   }
 
   return { activate, deactivate };
@@ -234,10 +241,7 @@ const GalleryPage = (() => {
 
   function activate() {
     Gallery.loadPhotos();
-    if (!initialized) {
-      initialized = true;
-      _setupControls();
-    }
+    if (!initialized) { initialized = true; _setupControls(); }
   }
 
   function _setupControls() {
@@ -276,7 +280,6 @@ const GalleryPage = (() => {
       });
     }
 
-    // Filter buttons
     document.querySelectorAll('[data-filter]').forEach(btn => {
       btn.addEventListener('click', () => {
         document.querySelectorAll('[data-filter]').forEach(b => b.classList.remove('active'));
@@ -285,11 +288,9 @@ const GalleryPage = (() => {
       });
     });
 
-    // Sort
     const sortEl = document.getElementById('gallery-sort');
     if (sortEl) sortEl.addEventListener('change', () => Gallery.setSort(sortEl.value));
 
-    // Lightbox close
     const lbClose = document.getElementById('lightbox-close');
     if (lbClose) lbClose.addEventListener('click', () => Gallery.closeLightbox());
 

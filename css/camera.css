@@ -1,9 +1,10 @@
 /* camera.css — camera page styles */
 
 #page-camera {
-  position: relative;
   background: #000;
   overflow: hidden;
+  display: flex;
+  flex-direction: column;
 }
 
 /* ---- Viewfinder ---- */
@@ -11,11 +12,14 @@
   position: relative;
   width: 100%;
   flex: 1;
+  min-height: 0;        /* critical: allows shrink in flex column */
   overflow: hidden;
   background: #000;
 }
 
 #camera-video {
+  position: absolute;
+  top: 0; left: 0;
   width: 100%;
   height: 100%;
   object-fit: cover;
@@ -102,7 +106,10 @@
   z-index: 5;
   pointer-events: none;
   backdrop-filter: blur(4px);
+  white-space: nowrap;
 }
+/* Only visible inside the camera page */
+#page-camera:not(.active) #gps-badge { display: none !important; }
 #gps-badge.gps-active { color: var(--success); border-color: rgba(0,230,118,0.25); }
 #gps-badge.gps-error { color: var(--danger); border-color: rgba(255,59,92,0.25); }
 #gps-badge i { font-size: 10px; }
@@ -112,10 +119,10 @@
   flex-shrink: 0;
   background: var(--bg2);
   border-top: 1px solid var(--border);
-  padding: 12px 16px 14px;
+  padding: 8px 16px 10px;
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 8px;
   z-index: 10;
 }
 
@@ -191,7 +198,7 @@
 
 /* Shutter Button */
 #btn-shutter {
-  width: 68px; height: 68px;
+  width: 62px; height: 62px;
   border-radius: 50%;
   background: var(--text);
   border: 3px solid var(--bg4);
@@ -205,7 +212,7 @@
 }
 #btn-shutter::after {
   content: '';
-  width: 52px; height: 52px;
+  width: 46px; height: 46px;
   border-radius: 50%;
   background: var(--text);
   position: absolute;
@@ -228,8 +235,8 @@
 /* ---- Timestamp Position Picker ---- */
 #ts-position-panel {
   position: absolute;
-  bottom: calc(100% + 8px);
-  right: 16px;
+  bottom: calc(100% + 6px);
+  right: 0;
   background: var(--bg3);
   border: 1px solid var(--border);
   border-radius: var(--radius);

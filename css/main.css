@@ -15,8 +15,8 @@
   --success: #00e676;
   --warning: #ffab00;
 
-  --nav-h: 64px;
-  --topbar-h: 52px;
+  --nav-h: 58px;
+  --topbar-h: 48px;
   --radius: 10px;
   --radius-sm: 6px;
   --transition: 0.2s ease;
@@ -71,7 +71,8 @@ input, select, textarea { font-family: inherit; }
   flex-direction: column;
   height: 100vh;
   height: 100dvh;
-  position: relative;
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
   overflow: hidden;
 }
 
@@ -150,16 +151,23 @@ input, select, textarea { font-family: inherit; }
 /* ---- Pages ---- */
 .pages-container {
   flex: 1;
+  min-height: 0;        /* critical: allows flex child to shrink below content size */
   overflow: hidden;
   position: relative;
+  isolation: isolate;
 }
 .page {
   position: absolute;
-  inset: 0;
+  top: 0; left: 0; right: 0; bottom: 0;
   display: none;
   overflow: hidden;
+  visibility: hidden;   /* double-lock: hidden even if display glitches */
 }
-.page.active { display: flex; flex-direction: column; }
+.page.active {
+  display: flex;
+  flex-direction: column;
+  visibility: visible;
+}
 
 /* ---- Icon Buttons ---- */
 .icon-btn {
@@ -222,13 +230,14 @@ input, select, textarea { font-family: inherit; }
   display: none;
   align-items: center;
   gap: 10px;
-  padding: 10px 16px;
+  padding: 8px 16px;
   background: var(--accent-dim);
   border-bottom: 1px solid rgba(0,229,255,0.2);
   font-size: 12px;
   font-family: var(--font-body);
   color: var(--text);
   flex-shrink: 0;
+  min-height: 0;
 }
 #install-banner i { color: var(--accent); }
 #install-banner .spacer { flex: 1; }
